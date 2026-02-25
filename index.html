@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#060f1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="JBLM Scout">
+<link rel="manifest" href="manifest.json">
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(()=>{})})}</script>
+<title>JBLM Scout — Your Adventure Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#060f1a;
+  --s1:#0b1929;
+  --s2:#101f33;
+  --s3:#162740;
+  --s4:#1c3050;
+  --green:#00ff88;
+  --green2:#00cc6a;
+  --amber:#ffc107;
+  --red:#ff3d5a;
+  --blue:#00b4ff;
+  --purple:#a855f7;
+  --cyan:#06d6d6;
+  --orange:#ff6b35;
+  --border:rgba(0,255,136,0.1);
+  --border2:rgba(255,255,255,0.06);
+  --text:#c8dff0;
+  --dim:#5a7a9a;
+  --white:#fff;
+  --r:14px;
+  --ease:cubic-bezier(.4,0,.2,1);
+  --shadow:0 20px 60px rgba(0,0,0,.5);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
+
+/* BACKGROUND */
+.bg-orbs{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.12;animation:float 8s ease-in-out infinite}
+.orb1{width:500px;height:500px;background:var(--green);top:-200px;left:-150px;animation-delay:0s}
+.orb2{width:400px;height:400px;background:var(--blue);bottom:-150px;right:-100px;animation-delay:3s}
+.orb3{width:300px;height:300px;background:var(--purple);top:40%;left:50%;animation-delay:5s}
+@keyframes float{0%,100%{transform:translate(0,0)}50%{transform:translate(15px,20px)}}
+
+/* GRID OVERLAY */
+body::after{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(rgba(0,255,136,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,255,136,.025) 1px,transparent 1px);
+  background-size:48px 48px;
+}
+
+/* HEADER */
+.hdr{
+  position:fixed;top:0;left:0;right:0;z-index:200;
+  background:rgba(6,15,26,.85);backdrop-filter:blur(24px);
+  border-bottom:1px solid var(--border);
+  height:60px;display:flex;align-items:center;
+  padding:0 16px;gap:12px;
+}
+.hdr-logo{display:flex;align-items:center;gap:10px;flex:1}
+.hdr-badge{
+  width:36px;height:36px;border-radius:10px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--green),var(--cyan));
+  display:flex;align-items:center;justify-content:center;font-size:18px;
+  box-shadow:0 0 20px rgba(0,255,136,.3);
+}
+.hdr-title{font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:var(--white);letter-spacing:1px}
+.hdr-sub{font-size:9px;color:var(--green);letter-spacing:2.5px;font-weight:600;text-transform:uppercase;line-height:1;display:block}
+.hdr-live{
+  display:flex;align-items:center;gap:6px;
+  background:rgba(0,255,136,.08);border:1px solid rgba(0,255,136,.2);
+  padding:5px 12px;border-radius:20px;cursor:pointer;
+  font-size:11px;color:var(--green);font-weight:600;letter-spacing:.5px;
+  transition:.2s;white-space:nowrap;
+}
+.hdr-live:hover{background:rgba(0,255,136,.15)}
+.pulse{width:7px;height:7px;background:var(--green);border-radius:50%;position:relative}
+.pulse::after{content:'';position:absolute;inset:-3px;border-radius:50%;border:2px solid var(--green);opacity:.5;animation:ripple 1.5s infinite}
+@keyframes ripple{0%{transform:scale(1);opacity:.5}100%{transform:scale(2.5);opacity:0}}
+
+/* SCROLL CONTAINER */
+.app{position:fixed;top:60px;bottom:64px;left:0;right:0;z-index:1;overflow:hidden}
+.views{height:100%;width:100%;overflow:hidden;position:relative}
+.view{
+  position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;
+  opacity:0;pointer-events:none;transform:translateY(12px);
+  transition:opacity .3s var(--ease),transform .3s var(--ease);
+  -webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:rgba(0,255,136,.15) transparent;
+  padding-bottom:20px;
+}
+.view::-webkit-scrollbar{width:3px}
+.view::-webkit-scrollbar-thumb{background:rgba(0,255,136,.15);border-radius:2px}
+.view.active{opacity:1;pointer-events:all;transform:translateY(0)}
+
+/* NAV */
+.nav{
+  position:fixed;bottom:0;left:0;right:0;z-index:200;
+  background:rgba(6,15,26,.95);backdrop-filter:blur(24px);
+  border-top:1px solid var(--border);
+  display:flex;height:64px;
+  padding:0 4px;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.nb{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  border:none;background:none;color:var(--dim);cursor:pointer;
+  transition:.2s var(--ease);border-radius:12px;margin:4px 2px;
+  position:relative;
+}
+.nb.active{color:var(--green)}
+.nb.active .nb-icon{filter:drop-shadow(0 0 8px rgba(0,255,136,.5))}
+.nb-icon{font-size:20px;line-height:1;transition:.2s}
+.nb-label{font-size:9px;font-weight:600;letter-spacing:.8px;text-transform:uppercase}
+.nb-pip{position:absolute;top:6px;right:18px;width:6px;height:6px;background:var(--red);border-radius:50%;border:1px solid var(--bg)}
+
+/* ── HERO BANNER ── */
+.hero{
+  margin:16px 16px 0;border-radius:20px;overflow:hidden;
+  background:linear-gradient(135deg,var(--s2) 0%,rgba(0,60,30,.4) 100%);
+  border:1px solid rgba(0,255,136,.15);
+  padding:24px 20px 20px;position:relative;
+}
+.hero::before{
+  content:'';position:absolute;top:-40px;right:-40px;
+  width:200px;height:200px;border-radius:50%;
+  background:radial-gradient(circle,rgba(0,255,136,.08) 0%,transparent 70%);
+  pointer-events:none;
+}
+.hero-eye{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.25);
+  color:var(--green);font-size:10px;font-weight:600;letter-spacing:1.5px;
+  text-transform:uppercase;padding:4px 10px;border-radius:20px;margin-bottom:12px;
+}
+.hero h1{font-family:'Rajdhani',sans-serif;font-size:34px;font-weight:700;color:var(--white);line-height:1.05;margin-bottom:6px}
+.hero h1 span{color:var(--green)}
+.hero p{font-size:13px;color:var(--dim);line-height:1.5;margin-bottom:18px}
+.stats-row{display:flex;gap:0;background:rgba(0,0,0,.2);border-radius:12px;overflow:hidden;border:1px solid var(--border2)}
+.stat{flex:1;text-align:center;padding:12px 8px;border-right:1px solid var(--border2)}
+.stat:last-child{border-right:none}
+.stat-n{font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:var(--amber);line-height:1}
+.stat-l{font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-top:2px}
+
+/* ── SECTION ── */
+.sec{padding:20px 16px 0;max-width:860px;margin:0 auto}
+.sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.sec-title{font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:var(--white);letter-spacing:.5px;display:flex;align-items:center;gap:8px}
+.sec-cnt{font-size:11px;color:var(--green);background:rgba(0,255,136,.08);border:1px solid rgba(0,255,136,.15);padding:2px 9px;border-radius:10px;font-weight:600}
+.refresh-btn{
+  display:flex;align-items:center;gap:5px;font-size:11px;color:var(--dim);
+  background:var(--s2);border:1px solid var(--border2);border-radius:20px;
+  padding:5px 10px;cursor:pointer;transition:.2s;
+}
+.refresh-btn:hover{color:var(--green);border-color:rgba(0,255,136,.3)}
+.spin{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── FILTERS ── */
+.filters{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;padding:0 16px 16px;max-width:860px}
+.filters::-webkit-scrollbar{display:none}
+.fb{
+  display:flex;align-items:center;gap:5px;white-space:nowrap;
+  padding:8px 14px;border-radius:50px;border:1px solid var(--border2);
+  background:var(--s2);color:var(--dim);font-family:'Inter',sans-serif;
+  font-size:12px;font-weight:500;cursor:pointer;transition:.2s;flex-shrink:0;
+}
+.fb.active{background:var(--green);border-color:var(--green);color:#000;font-weight:700}
+.fb:hover:not(.active){border-color:rgba(0,255,136,.35);color:var(--text)}
+
+/* ── SEARCH ── */
+.search-wrap{padding:0 16px 14px;max-width:860px;margin:0 auto;position:relative}
+.search-icon{position:absolute;left:28px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--dim);pointer-events:none}
+.search-input{
+  width:100%;background:var(--s2);border:1px solid var(--border2);
+  border-radius:50px;padding:11px 16px 11px 40px;
+  color:var(--text);font-family:'Inter',sans-serif;font-size:14px;outline:none;transition:.2s;
+}
+.search-input::placeholder{color:var(--dim)}
+.search-input:focus{border-color:rgba(0,255,136,.4);background:var(--s3)}
+
+/* ── SKELETON ── */
+.skels{display:flex;flex-direction:column;gap:10px}
+.skel{
+  border-radius:var(--r);border:1px solid var(--border2);
+  background:linear-gradient(90deg,var(--s1) 25%,var(--s2) 50%,var(--s1) 75%);
+  background-size:200% 100%;animation:shim 1.5s infinite;
+}
+@keyframes shim{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* ── EVENT CARD ── */
+.ev-list{display:flex;flex-direction:column;gap:10px}
+.ev-card{
+  background:var(--s1);border:1px solid var(--border2);border-radius:var(--r);
+  cursor:pointer;transition:.25s var(--ease);overflow:hidden;
+  animation:up .35s ease both;
+}
+.ev-card:hover,.ev-card:active{border-color:rgba(0,255,136,.35);transform:translateY(-2px);box-shadow:0 10px 35px rgba(0,0,0,.4),0 0 0 1px rgba(0,255,136,.08)}
+@keyframes up{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.ev-inner{display:flex;align-items:stretch}
+.ev-date{
+  width:66px;flex-shrink:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:14px 6px;
+  border-right:1px solid var(--border2);background:rgba(0,0,0,.2);
+}
+.ev-mon{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim)}
+.ev-day{font-family:'Rajdhani',sans-serif;font-size:32px;font-weight:700;color:var(--white);line-height:1}
+.ev-dow{font-size:9px;color:var(--dim)}
+.ev-main{flex:1;padding:12px 14px;min-width:0}
+.ev-name{font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700;color:var(--white);line-height:1.2;margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ev-meta{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.ev-venue{font-size:11px;color:var(--dim)}
+.ecat{font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;text-transform:uppercase;letter-spacing:.5px}
+.ecat-music{background:rgba(168,85,247,.15);color:#c084fc}
+.ecat-sports{background:rgba(0,255,136,.1);color:var(--green)}
+.ecat-arts{background:rgba(255,193,7,.1);color:var(--amber)}
+.ecat-family{background:rgba(0,180,255,.1);color:var(--blue)}
+.ecat-misc{background:rgba(255,255,255,.06);color:var(--dim)}
+.ev-price{font-size:11px;color:var(--green);font-weight:600;background:rgba(0,255,136,.07);border:1px solid rgba(0,255,136,.15);padding:2px 7px;border-radius:4px}
+.ev-arr{display:flex;align-items:center;padding:0 12px;color:var(--dim);font-size:20px;transition:.2s}
+.ev-card:hover .ev-arr{color:var(--green);transform:translateX(3px)}
+
+/* ── ACTIVITY CARD ── */
+.ac-grid{display:flex;flex-direction:column;gap:10px}
+.ac{
+  background:var(--s1);border:1px solid var(--border2);border-radius:var(--r);
+  cursor:pointer;transition:.25s var(--ease);overflow:hidden;
+  animation:up .3s ease both;
+}
+.ac:hover,.ac:active{border-color:rgba(0,255,136,.3);transform:translateY(-2px);box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.ac-top{display:flex;align-items:center;gap:0;padding:0}
+.ac-left{
+  width:56px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  font-size:24px;padding:16px 0;self-align:stretch;
+  border-right:1px solid var(--border2);background:rgba(0,0,0,.15);
+}
+.ac-body{flex:1;padding:12px 14px;min-width:0}
+.ac-name{font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700;color:var(--white);line-height:1.2;margin-bottom:4px}
+.ac-row{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-bottom:4px}
+.ac-dist{font-size:11px;color:var(--dim)}
+.ac-rat{font-size:11px;color:var(--amber);font-weight:600}
+.badge-on{font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;text-transform:uppercase;background:rgba(255,193,7,.12);color:var(--amber);border:1px solid rgba(255,193,7,.2)}
+.badge-off{font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;text-transform:uppercase;background:rgba(0,180,255,.1);color:var(--blue);border:1px solid rgba(0,180,255,.15)}
+.ac-desc{font-size:12px;color:var(--dim);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:8px}
+.ac-tags{display:flex;gap:5px;flex-wrap:wrap}
+.tag{font-size:10px;color:var(--dim);background:rgba(255,255,255,.05);border:1px solid var(--border2);padding:2px 7px;border-radius:4px}
+.ac-arr{display:flex;align-items:center;padding:0 14px;color:var(--dim);font-size:22px;transition:.2s;flex-shrink:0}
+.ac:hover .ac-arr{color:var(--green);transform:translateX(3px)}
+
+/* ── CAT COLOR ACCENTS ── */
+.ac[data-cat="onbase"] .ac-left{color:#ffc107}
+.ac[data-cat="mma"] .ac-left{color:#ff3d5a}
+.ac[data-cat="sports"] .ac-left{color:#00ff88}
+.ac[data-cat="outdoor"] .ac-left{color:#06d6d6}
+.ac[data-cat="gaming"] .ac-left{color:#ffc107}
+.ac[data-cat="nature"] .ac-left{color:#06d6d6}
+.ac[data-cat="social"] .ac-left{color:#a855f7}
+.ac[data-cat="fishing"] .ac-left{color:#00b4ff}
+.ac[data-cat="airsoft"] .ac-left{color:#ff6b35}
+.ac[data-cat="frisbee"] .ac-left{color:#00ff88}
+
+/* ── WDFW ── */
+.wdfw-card{background:var(--s1);border:1px solid var(--border2);border-radius:var(--r);padding:18px;margin-bottom:10px}
+.wdfw-hdr{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.wdfw-icon{font-size:30px}
+.wdfw-t{font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:var(--white)}
+.wdfw-s{font-size:12px;color:var(--dim)}
+.season-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.si{background:var(--s2);border-radius:10px;padding:10px 12px;border:1px solid var(--border2)}
+.si-animal{font-size:11px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:.5px}
+.si-dates{font-size:13px;color:var(--amber);font-weight:600;margin-top:3px}
+.si-note{font-size:10px;color:var(--dim);margin-top:2px}
+.wdfw-link{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:11px 14px;background:rgba(0,255,136,.05);border:1px solid rgba(0,255,136,.15);
+  border-radius:10px;text-decoration:none;cursor:pointer;transition:.2s;margin-bottom:7px;
+}
+.wdfw-link:hover{background:rgba(0,255,136,.1);border-color:rgba(0,255,136,.3)}
+.wdfw-link-t{font-size:13px;color:var(--green);font-weight:600}
+.wdfw-link-a{color:var(--green);font-size:16px}
+
+/* ── RESOURCES ── */
+.res-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px 16px;max-width:860px;margin:0 auto}
+.rc{
+  background:var(--s1);border:1px solid var(--border2);border-radius:var(--r);
+  padding:16px;text-decoration:none;cursor:pointer;transition:.25s var(--ease);display:block;
+}
+.rc:hover{border-color:rgba(0,255,136,.3);transform:translateY(-2px);box-shadow:0 8px 25px rgba(0,0,0,.3)}
+.rc-e{font-size:28px;margin-bottom:10px;display:block}
+.rc-n{font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;color:var(--white);margin-bottom:3px}
+.rc-s{font-size:11px;color:var(--dim);line-height:1.4}
+
+/* ── MODAL ── */
+.modal-ov{
+  position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.75);backdrop-filter:blur(12px);
+  display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .25s;
+}
+.modal-ov.open{opacity:1;pointer-events:all}
+.modal{
+  width:100%;max-width:860px;margin:0 auto;
+  background:var(--s1);border-radius:24px 24px 0 0;
+  border:1px solid rgba(0,255,136,.15);border-bottom:none;
+  max-height:90vh;overflow-y:auto;
+  transform:translateY(100%);transition:transform .32s var(--ease);
+  -webkit-overflow-scrolling:touch;
+}
+.modal-ov.open .modal{transform:translateY(0)}
+.modal-drag{width:40px;height:4px;background:rgba(255,255,255,.1);border-radius:2px;margin:14px auto 0}
+
+/* Modal gradient top strip by category */
+.modal-strip{height:4px;margin:0 20px;border-radius:0 0 4px 4px;margin-bottom:0}
+.strip-onbase{background:linear-gradient(90deg,var(--amber),transparent)}
+.strip-mma{background:linear-gradient(90deg,var(--red),transparent)}
+.strip-sports,.strip-frisbee{background:linear-gradient(90deg,var(--green),transparent)}
+.strip-outdoor,.strip-nature,.strip-fishing{background:linear-gradient(90deg,var(--cyan),transparent)}
+.strip-gaming{background:linear-gradient(90deg,var(--amber),transparent)}
+.strip-social{background:linear-gradient(90deg,var(--purple),transparent)}
+.strip-airsoft{background:linear-gradient(90deg,var(--orange),transparent)}
+.strip-music{background:linear-gradient(90deg,var(--purple),transparent)}
+
+.modal-hdr{display:flex;align-items:flex-start;gap:14px;padding:20px 20px 0}
+.modal-icon{width:62px;height:62px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;background:var(--s3)}
+.modal-ttl{flex:1}
+.modal-name{font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:700;color:var(--white);line-height:1.1}
+.modal-sub{font-size:12px;color:var(--green);font-weight:600;margin-top:3px}
+.modal-x{width:36px;height:36px;border-radius:50%;background:var(--s3);border:1px solid var(--border2);color:var(--dim);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.15s}
+.modal-x:hover{color:var(--white);background:var(--s4)}
+.modal-body{padding:20px}
+.ml{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin:16px 0 8px}
+.ml:first-child{margin-top:0}
+.mt{font-size:14px;color:var(--text);line-height:1.7}
+.mg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mp{background:var(--s2);border-radius:10px;padding:12px;border:1px solid var(--border2)}
+.mp .l{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--dim);font-weight:600}
+.mp .v{font-size:13px;font-weight:600;color:var(--white);margin-top:4px;line-height:1.3}
+.mp .vg{color:var(--green)}
+.mp .va{color:var(--amber)}
+.mp .vb{color:var(--blue)}
+.mtags{display:flex;flex-wrap:wrap;gap:5px}
+.mtag{font-size:11px;color:var(--text);background:var(--s3);border:1px solid var(--border2);padding:4px 9px;border-radius:5px}
+.mlinks{display:flex;flex-direction:column;gap:8px}
+
+/* ACTION BUTTON — the fix for broken website buttons */
+.mlink-btn{
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--s2);border:1px solid var(--border2);
+  border-radius:12px;padding:14px 16px;
+  color:var(--text);font-size:14px;font-weight:500;
+  transition:.2s var(--ease);cursor:pointer;width:100%;text-align:left;
+  font-family:'Inter',sans-serif;text-decoration:none;
+}
+.mlink-btn:hover,.mlink-btn:active{border-color:rgba(0,255,136,.35);color:var(--green);background:var(--s3)}
+.mlink-left{display:flex;align-items:center;gap:10px}
+.mlink-icon{font-size:18px;width:24px;text-align:center}
+.mlink-arr{font-size:18px;color:var(--dim);transition:.2s}
+.mlink-btn:hover .mlink-arr{color:var(--green);transform:translateX(2px)}
+
+/* TOAST */
+.toast{
+  position:fixed;top:72px;left:50%;transform:translateX(-50%) translateY(-16px);
+  background:rgba(0,255,136,.9);color:#000;padding:10px 20px;
+  border-radius:20px;font-size:13px;font-weight:700;z-index:500;
+  opacity:0;transition:.3s;pointer-events:none;white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* EMPTY */
+.empty{text-align:center;padding:48px 16px;color:var(--dim)}
+.empty-e{font-size:48px;margin-bottom:12px}
+.empty-t{font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:var(--text);margin-bottom:6px}
+.empty-s{font-size:13px;line-height:1.5}
+
+/* TIPS */
+.tip-card{background:var(--s1);border:1px solid var(--border2);border-radius:var(--r);padding:18px;margin-bottom:10px;transition:.2s}
+.tip-card:hover{border-color:rgba(0,255,136,.2)}
+.tip-n{font-family:'Rajdhani',sans-serif;font-size:36px;font-weight:700;color:rgba(0,255,136,.12);line-height:1;margin-bottom:4px}
+.tip-t{font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:var(--white);margin-bottom:6px}
+.tip-b{font-size:13px;color:var(--dim);line-height:1.65}
+
+/* INSTALL CARD */
+.install-card{
+  background:linear-gradient(135deg,rgba(0,60,30,.6),rgba(0,20,50,.6));
+  border:1px solid rgba(0,255,136,.2);border-radius:var(--r);
+  padding:18px;margin-bottom:12px;
+}
+.install-t{font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:var(--green);margin-bottom:6px}
+.install-b{font-size:12px;color:var(--dim);line-height:1.8}
+.install-b strong{color:var(--text)}
+
+/* ANIM DELAYS */
+.ac:nth-child(1),.ev-card:nth-child(1){animation-delay:.03s}
+.ac:nth-child(2),.ev-card:nth-child(2){animation-delay:.07s}
+.ac:nth-child(3),.ev-card:nth-child(3){animation-delay:.11s}
+.ac:nth-child(4),.ev-card:nth-child(4){animation-delay:.15s}
+.ac:nth-child(5),.ev-card:nth-child(5){animation-delay:.18s}
+.ac:nth-child(6),.ev-card:nth-child(6){animation-delay:.21s}
+.ac:nth-child(7),.ev-card:nth-child(7){animation-delay:.24s}
+.ac:nth-child(8),.ev-card:nth-child(8){animation-delay:.27s}
+
+/* FEATURED HORIZONTAL SCROLL */
+.feat-scroll{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding:0 16px 4px}
+.feat-scroll::-webkit-scrollbar{display:none}
+.feat-chip{
+  flex-shrink:0;display:flex;flex-direction:column;
+  background:var(--s1);border:1px solid var(--border2);border-radius:14px;
+  padding:14px;width:150px;cursor:pointer;transition:.2s;
+  animation:up .4s ease both;
+}
+.feat-chip:hover{border-color:rgba(0,255,136,.3);transform:translateY(-2px)}
+.feat-e{font-size:26px;margin-bottom:8px}
+.feat-n{font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;color:var(--white);line-height:1.2;margin-bottom:2px}
+.feat-s{font-size:10px;color:var(--dim)}
+
+/* DIVIDER */
+.divider{display:flex;align-items:center;gap:12px;padding:20px 16px 8px;max-width:860px;margin:0 auto}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border2)}
+.div-t{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;color:var(--dim);letter-spacing:2px;text-transform:uppercase;white-space:nowrap}
+</style>
+</head>
+<body>
+
+<!-- BACKGROUND -->
+<div class="bg-orbs"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- HEADER -->
+<header class="hdr">
+  <div class="hdr-logo">
+    <div class="hdr-badge">🎖️</div>
+    <div>
+      <div class="hdr-title">JBLM SCOUT</div>
+      <span class="hdr-sub">Pacific Northwest</span>
+    </div>
+  </div>
+  <div class="hdr-live" onclick="refreshAll()" id="liveBadge">
+    <div class="pulse"></div>
+    <span id="liveStatus">LIVE</span>
+  </div>
+</header>
+
+<!-- MAIN VIEWS -->
+<div class="app">
+  <div class="views">
+
+    <!-- ══ EVENTS ══ -->
+    <div class="view active" id="view-events">
+      <div class="hero" style="margin-top:16px">
+        <div class="hero-eye">🎟️ Auto-Updating • Ticketmaster Live Data</div>
+        <h1>Live <span>Events</span> Near JBLM</h1>
+        <p>Concerts, sports, shows & tournaments pulled live within 50 miles — updates automatically</p>
+        <div class="stats-row">
+          <div class="stat"><div class="stat-n" id="evTotal">—</div><div class="stat-l">Events</div></div>
+          <div class="stat"><div class="stat-n">50mi</div><div class="stat-l">Radius</div></div>
+          <div class="stat"><div class="stat-n" id="evDays">90</div><div class="stat-l">Days Ahead</div></div>
+        </div>
+      </div>
+
+      <div class="filters" id="evFilters" style="margin-top:16px">
+        <button class="fb active" data-seg="all">⚡ All</button>
+        <button class="fb" data-seg="music">🎵 Concerts</button>
+        <button class="fb" data-seg="sports">🏅 Sports</button>
+        <button class="fb" data-seg="arts">🎭 Arts & Shows</button>
+        <button class="fb" data-seg="family">👪 Family</button>
+        <button class="fb" data-seg="misc">🎪 Other</button>
+      </div>
+
+      <div class="sec" style="padding-top:0">
+        <div class="sec-head">
+          <div class="sec-title">Upcoming Events <span class="sec-cnt" id="evCount">Loading...</span></div>
+          <button class="refresh-btn" onclick="loadEvents()"><span id="refIcon">↻</span> Refresh</button>
+        </div>
+        <div id="evContainer"></div>
+      </div>
+    </div>
+
+    <!-- ══ EXPLORE ══ -->
+    <div class="view" id="view-explore">
+      <div class="hero" style="margin-top:16px">
+        <div class="hero-eye">🌲 Curated • JBLM + 50 Miles</div>
+        <h1>Places & <span>Activities</span></h1>
+        <p>MMA gyms, lacrosse, fishing charters, paintball, airsoft, D&D, disc golf, and more</p>
+        <div class="stats-row">
+          <div class="stat"><div class="stat-n" id="acTotal">25+</div><div class="stat-l">Places</div></div>
+          <div class="stat"><div class="stat-n">9</div><div class="stat-l">Categories</div></div>
+          <div class="stat"><div class="stat-n">FREE</div><div class="stat-l">w/ Mil ID</div></div>
+        </div>
+      </div>
+
+      <!-- Featured quick picks -->
+      <div class="divider"><div class="div-t">⚡ Quick Pick</div></div>
+      <div class="feat-scroll" id="featRow"></div>
+
+      <div class="divider"><div class="div-t">All Activities</div></div>
+      <div class="search-wrap" style="padding-top:4px">
+        <span class="search-icon">🔍</span>
+        <input class="search-input" id="searchInput" type="text" placeholder="Search MMA, fishing, D&D, airsoft..." autocomplete="off">
+      </div>
+
+      <div class="filters" id="acFilters">
+        <button class="fb active" data-cat="all">⚡ All</button>
+        <button class="fb" data-cat="onbase">🎖️ On Base</button>
+        <button class="fb" data-cat="mma">🥊 MMA</button>
+        <button class="fb" data-cat="sports">🏅 Leagues</button>
+        <button class="fb" data-cat="fishing">🎣 Fishing</button>
+        <button class="fb" data-cat="outdoor">🌲 Outdoor</button>
+        <button class="fb" data-cat="airsoft">🔫 Paintball/Airsoft</button>
+        <button class="fb" data-cat="frisbee">🥏 Disc/Frisbee</button>
+        <button class="fb" data-cat="gaming">🎲 D&D & Gaming</button>
+        <button class="fb" data-cat="nature">⛰️ Hiking</button>
+        <button class="fb" data-cat="social">🍺 Social</button>
+      </div>
+
+      <div class="sec" style="padding-top:0">
+        <div class="sec-head">
+          <div class="sec-title" id="acTitle">All Activities <span class="sec-cnt" id="acCount"></span></div>
+        </div>
+        <div class="ac-grid" id="acContainer"></div>
+      </div>
+    </div>
+
+    <!-- ══ HUNTING ══ -->
+    <div class="view" id="view-hunting">
+      <div class="hero" style="margin-top:16px">
+        <div class="hero-eye">🦌 WDFW Official Data</div>
+        <h1>Hunting & <span>Fishing</span></h1>
+        <p>Washington DFW seasons, licenses, regulations & live reports for the JBLM area</p>
+      </div>
+
+      <div class="sec">
+        <div class="wdfw-card">
+          <div class="wdfw-hdr"><div class="wdfw-icon">🦌</div><div><div class="wdfw-t">Big Game Seasons</div><div class="wdfw-s">Pierce & Thurston County — GMUs near JBLM</div></div></div>
+          <div class="season-grid">
+            <div class="si"><div class="si-animal">🦌 Deer (Archery)</div><div class="si-dates">Sep 1 – Nov 15</div><div class="si-note">GMUs 652, 654, 666</div></div>
+            <div class="si"><div class="si-animal">🦌 Deer (Rifle)</div><div class="si-dates">Oct 12 – Nov 15</div><div class="si-note">General Season</div></div>
+            <div class="si"><div class="si-animal">🫎 Elk (Archery)</div><div class="si-dates">Sep 6 – Sep 21</div><div class="si-note">Permit draw required</div></div>
+            <div class="si"><div class="si-animal">🫎 Elk (Rifle)</div><div class="si-dates">Oct 26 – Nov 8</div><div class="si-note">Limited entry</div></div>
+            <div class="si"><div class="si-animal">🦃 Turkey (Spring)</div><div class="si-dates">Apr 15 – May 31</div><div class="si-note">SW Washington units</div></div>
+            <div class="si"><div class="si-animal">🦆 Waterfowl</div><div class="si-dates">Oct – Jan</div><div class="si-note">Nisqually Refuge</div></div>
+          </div>
+          <a class="wdfw-link" href="https://wdfw.wa.gov/hunting/seasons" target="_blank"><span class="wdfw-link-t">📅 Full Season Dates — WDFW.wa.gov</span><span class="wdfw-link-a">↗</span></a>
+          <a class="wdfw-link" href="https://wdfw.wa.gov/hunting/regulations/game-management-units" target="_blank"><span class="wdfw-link-t">🗺️ GMU Map & Boundaries</span><span class="wdfw-link-a">↗</span></a>
+          <a class="wdfw-link" href="https://wdfw.wa.gov/hunting/draw" target="_blank"><span class="wdfw-link-t">🎯 Special Draw Permits (Elk etc.)</span><span class="wdfw-link-a">↗</span></a>
+        </div>
+
+        <div class="wdfw-card">
+          <div class="wdfw-hdr"><div class="wdfw-icon">🎣</div><div><div class="wdfw-t">Fishing — Puget Sound & Rivers</div><div class="wdfw-s">Salmon, steelhead, trout, crab, bottomfish</div></div></div>
+          <div class="season-grid">
+            <div class="si"><div class="si-animal">🐟 Chinook Salmon</div><div class="si-dates">Aug – Oct</div><div class="si-note">Puget Sound runs</div></div>
+            <div class="si"><div class="si-animal">🐟 Coho Salmon</div><div class="si-dates">Sep – Nov</div><div class="si-note">Puyallup & Nisqually</div></div>
+            <div class="si"><div class="si-animal">🐟 Steelhead</div><div class="si-dates">Nov – Mar</div><div class="si-note">Nisqually River</div></div>
+            <div class="si"><div class="si-animal">🦀 Dungeness Crab</div><div class="si-dates">Jul – Sep</div><div class="si-note">Puget Sound zones</div></div>
+            <div class="si"><div class="si-animal">🐟 Trout & Bass</div><div class="si-dates">Year-round</div><div class="si-note">Steilacoom Lake</div></div>
+            <div class="si"><div class="si-animal">🦑 Squid / Bottomfish</div><div class="si-dates">Year-round</div><div class="si-note">Puget Sound piers</div></div>
+          </div>
+          <a class="wdfw-link" href="https://wdfw.wa.gov/fishing/regulations" target="_blank"><span class="wdfw-link-t">📋 Fishing Regulations & Reports</span><span class="wdfw-link-a">↗</span></a>
+          <a class="wdfw-link" href="https://wdfw.wa.gov/fishing/puget-sound" target="_blank"><span class="wdfw-link-t">🌊 Puget Sound Live Fishing Reports</span><span class="wdfw-link-a">↗</span></a>
+        </div>
+
+        <div class="wdfw-card">
+          <div class="wdfw-hdr"><div class="wdfw-icon">📋</div><div><div class="wdfw-t">Licenses & Key Links</div><div class="wdfw-s">Everything needed to be legal in Washington</div></div></div>
+          <a class="wdfw-link" href="https://wdfw.wa.gov/licenses/hunting" target="_blank"><span class="wdfw-link-t">🎫 Buy Hunting License</span><span class="wdfw-link-a">↗</span></a>
+          <a class="wdfw-link" href="https://wdfw.wa.gov/licenses/fishing" target="_blank"><span class="wdfw-link-t">🎫 Buy Fishing License</span><span class="wdfw-link-a">↗</span></a>
+          <a class="wdfw-link" href="https://fishhunt.dfw.wa.gov" target="_blank"><span class="wdfw-link-t">📱 WDFW Fish & Hunt App</span><span class="wdfw-link-a">↗</span></a>
+          <a class="wdfw-link" href="https://maps.google.com/?q=Big+J%27s+Outdoor+Store+Orting+WA" target="_blank"><span class="wdfw-link-t">📍 Big J's Outdoor Store — Orting (Best Local Shop)</span><span class="wdfw-link-a">↗</span></a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ RESOURCES & TIPS ══ -->
+    <div class="view" id="view-resources">
+      <div class="hero" style="margin-top:16px">
+        <div class="hero-eye">🎖️ JBLM & PNW Links</div>
+        <h1>Resources & <span>Tips</span></h1>
+        <p>Official base links, new soldier tips, and how to install this app on your phone</p>
+      </div>
+
+      <div class="divider"><div class="div-t">🔗 Key Links</div></div>
+      <div class="res-grid" id="resGrid"></div>
+
+      <div class="divider"><div class="div-t">📲 Install As An App</div></div>
+      <div style="padding:0 16px;max-width:860px;margin:0 auto">
+        <div class="install-card">
+          <div class="install-t">Install JBLM Scout on Your Phone</div>
+          <div class="install-b">
+            <strong>iPhone / Safari:</strong> Tap the Share button (box with arrow) → "Add to Home Screen" → Add<br>
+            <strong>Android / Chrome:</strong> Tap the ⋮ menu → "Add to Home Screen" or "Install App"<br><br>
+            Works offline for Explore, Hunting & Resources. Live events load whenever connected. No app store needed.
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"><div class="div-t">💡 New Soldier Tips</div></div>
+      <div style="padding:0 16px 16px;max-width:860px;margin:0 auto" id="tipsContainer"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-ov" id="modalOv">
+  <div class="modal" id="modalBox">
+    <div class="modal-drag"></div>
+    <div class="modal-strip" id="mStrip"></div>
+    <div class="modal-hdr">
+      <div class="modal-icon" id="mIcon"></div>
+      <div class="modal-ttl">
+        <div class="modal-name" id="mName"></div>
+        <div class="modal-sub" id="mSub"></div>
+      </div>
+      <button class="modal-x" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="mBody"></div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav class="nav">
+  <button class="nb active" onclick="switchView('events',this)"><span class="nb-icon">🎟️</span><span class="nb-label">Events</span></button>
+  <button class="nb" onclick="switchView('explore',this)"><span class="nb-icon">⚡</span><span class="nb-label">Explore</span></button>
+  <button class="nb" onclick="switchView('hunting',this)"><span class="nb-icon">🦌</span><span class="nb-label">Hunting</span></button>
+  <button class="nb" onclick="switchView('resources',this)"><span class="nb-icon">🎖️</span><span class="nb-label">Resources</span></button>
+</nav>
+
+<script>
+// ══════════════════════════════════
+// CONFIG — API KEY HARDCODED
+// ══════════════════════════════════
+const API_KEY = 'ufBdzf433JAaooAzcXZKCOf6deCgMX8e';
+const LAT = 47.1123, LNG = -122.5756, RADIUS = 50;
+const TM = 'https://app.ticketmaster.com/discovery/v2/events.json';
+
+// ══════════════════════════════════
+// ACTIVITIES DATA — FULLY EXPANDED
+// ══════════════════════════════════
+const ACTS = [
+  // ON BASE
+  {id:1,cat:'onbase',emoji:'💪',name:'JBLM MWR Sports & Fitness',badge:'on',loc:'Joint Base Lewis-McChord',dist:'On Base',cost:'Free / MWR',rating:4.5,
+   tags:['MWR','Gym','Pools','Courts','Free','Active Duty'],
+   desc:'World-class MWR facilities including state-of-the-art gyms, pools, sports courts, climbing wall, and dozens of rec programs — most completely free for active duty. The single most underutilized resource at JBLM.',
+   hours:'Varies by facility — check jblmfmwr.com',
+   links:[{icon:'🌐',label:'JBLM MWR Portal',url:'https://www.jblmfmwr.com'},{icon:'📍',label:'Get Directions to JBLM',url:'https://maps.google.com/?q=Joint+Base+Lewis-McChord+WA'}]},
+
+  {id:2,cat:'onbase',emoji:'🏆',name:'JBLM Intramural Sports Leagues',badge:'on',loc:'JBLM Athletic Fields & Gyms',dist:'On Base',cost:'Free (MWR)',rating:4.4,
+   tags:['Basketball','Flag Football','Soccer','Volleyball','Softball','Dodgeball','Unit vs Unit'],
+   desc:'Year-round intramural leagues across every major sport. Compete by unit or sign up solo and get placed on a team. Leagues include basketball, flag football, soccer, volleyball, softball, and dodgeball. The fastest way to meet people at a new duty station.',
+   hours:'Evenings and weekends — check MWR schedule',
+   links:[{icon:'🌐',label:'MWR Sports Schedule',url:'https://www.jblmfmwr.com/sports'},{icon:'📍',label:'JBLM Athletic Complex',url:'https://maps.google.com/?q=JBLM+Athletic+Fields+WA'}]},
+
+  {id:3,cat:'onbase',emoji:'🎯',name:'JBLM Paintball Field',badge:'on',loc:'Flora Rd, JBLM',dist:'On Base',cost:'MWR Discounted',rating:4.6,
+   tags:['Paintball','MWR','Multiple Arenas','Rentals','Group Events','Affordable'],
+   desc:'4.6⭐ from 73 reviews — JBLM has its own paintball field with multiple cool arenas, affordable rates, and friendly staff. Great for unit events, birthday parties, or just a day out with your squad. Rentals available so no gear needed.',
+   hours:'Check JBLM MWR schedule — seasonal',
+   links:[{icon:'🌐',label:'JBLM Outdoor Recreation (MWR)',url:'https://www.jblmfmwr.com/outdoor-recreation'},{icon:'📍',label:'JBLM Paintball Field',url:'https://maps.google.com/?q=Flora+Rd+Joint+Base+Lewis-McChord+WA+paintball'}]},
+
+  {id:4,cat:'onbase',emoji:'⚔️',name:'JBLM Army Combatives (Free BJJ)',badge:'on',loc:'JBLM Training Center',dist:'On Base',cost:'Free',rating:4.6,
+   tags:['BJJ','MACP','Free Certification','Level 1–4','Grappling','Army Record'],
+   desc:'Army Combatives (MACP) is essentially Brazilian Jiu-Jitsu blended with wrestling — and it\'s free on base. Earn Level 1–4 certifications, compete in base tournaments, and look great on your record. Then supplement with a civilian gym for even faster growth.',
+   links:[{icon:'📍',label:'JBLM Training Center',url:'https://maps.google.com/?q=JBLM+WA+Training+Center'}]},
+
+  {id:5,cat:'onbase',emoji:'⛳',name:'JBLM Golf — Eagle\'s Pride & Whispering Firs',badge:'on',loc:'JBLM Golf Courses',dist:'On Base',cost:'$15–$35 military rate',rating:4.5,
+   tags:['Golf','Two 18-Hole Courses','MWR Rate','Championship Course','Scenic'],
+   desc:'Two beautiful 18-hole courses on base. Eagle\'s Pride is a full championship layout. Military green fees are among the lowest you\'ll find anywhere in the country. Book tee times online.',
+   hours:'Dawn to Dusk',
+   links:[{icon:'🌐',label:'Book Tee Times Online',url:'https://www.jblmfmwr.com/golf'}]},
+
+  // MMA & MARTIAL ARTS
+  {id:6,cat:'mma',emoji:'🥊',name:'T-Town MMA / Checkmat Tacoma',badge:'off',loc:'955 Tacoma Ave S, Tacoma',dist:'~8 miles',cost:'~$100–$140/mo',rating:4.9,
+   tags:['BJJ','Kickboxing','MMA','Checkmat Affiliation','Competition Team','All Levels'],
+   desc:'4.9⭐ from 71 reviews. One of the best MMA gyms near JBLM. Brazilian Jiu-Jitsu under Checkmat affiliation, kickboxing, and full MMA. Active competition team for those who want to compete. Multiple black belt instructors. Welcoming to beginners.',
+   hours:'Mon/Wed: 11AM–12:30PM & 5–8PM | Tue/Thu: 4:45–8PM | Fri: 5–8PM | Sat: 11AM–2PM | Sun: 9–10:30AM',
+   links:[{icon:'🌐',label:'T-Town MMA Website',url:'https://ttownmma.com'},{icon:'📍',label:'Get Directions',url:'https://maps.google.com/?q=955+Tacoma+Ave+S+Tacoma+WA'}]},
+
+  {id:7,cat:'mma',emoji:'🥋',name:'Vital Jiu-Jitsu / Srisuk Muay Thai',badge:'off',loc:'2519 Pacific Hwy E, Fife',dist:'~6 miles',cost:'~$100–$130/mo',rating:4.9,
+   tags:['BJJ','Muay Thai','10+ Years','Family Atmosphere','Competitors & Hobbyists'],
+   desc:'4.9⭐ from 75 reviews. A Tacoma institution for over 10 years. Members call it their "second family." Top-tier BJJ and Muay Thai for both competitors and casual practitioners. Closest high-quality MMA gym to JBLM.',
+   hours:'Mon/Wed: 4:30–8:30PM | Tue/Thu: 5–8:30PM | Fri: 5:30–8:30PM | Sat: 10AM–1PM | Sun: 1–3PM',
+   links:[{icon:'🌐',label:'Vital Jiu-Jitsu Website',url:'https://vitaljj.com'},{icon:'📍',label:'Get Directions',url:'https://maps.google.com/?q=2519+Pacific+Hwy+E+Fife+WA'}]},
+
+  {id:8,cat:'mma',emoji:'🏴',name:'Wave Combat Sports',badge:'off',loc:'1720 S 7th St, Tacoma',dist:'~10 miles',cost:'~$100–$150/mo',rating:4.9,
+   tags:['Kickboxing','Muay Thai','Boxing','Elite Striking','Structured Curriculum'],
+   desc:'4.9⭐ from 90 reviews. Elite striking gym. Coach Micah Brown\'s curriculum is described as "paid seminar quality every single class." Methodically structured from fundamentals up with a central boxing ring. If striking is your focus, this is your gym.',
+   hours:'Mon–Fri: 12–8:30PM',
+   links:[{icon:'🌐',label:'Wave Combat Sports Website',url:'https://www.wavecombatsports.com'},{icon:'📍',label:'Get Directions',url:'https://maps.google.com/?q=1720+S+7th+St+Tacoma+WA'}]},
+
+  // SPORTS LEAGUES
+  {id:9,cat:'sports',emoji:'🥍',name:'253 Lacrosse',badge:'off',loc:'12180 Park Ave S, Tacoma',dist:'~5 miles',cost:'League fees vary',rating:4.5,
+   tags:['Lacrosse','Adult Leagues','Competitive','Recreational','Tacoma Area'],
+   desc:'The primary adult lacrosse organization serving Tacoma and South Pierce County — JBLM\'s backyard. Adult recreational and competitive leagues. Reach out the week you arrive — don\'t wait for a season to start.',
+   links:[{icon:'🌐',label:'253 Lacrosse Website',url:'https://www.253lacrosse.com'},{icon:'📍',label:'Get Directions',url:'https://maps.google.com/?q=12180+Park+Ave+S+Tacoma+WA'}]},
+
+  {id:10,cat:'sports',emoji:'🤸',name:'South Sound Social Sports (Kickball, Dodgeball, Volleyball)',badge:'off',loc:'Multiple locations, Tacoma area',dist:'5–15 miles',cost:'$30–$80/season',rating:4.4,
+   tags:['Kickball','Dodgeball','Volleyball','Coed','Social','Meet People','Beginner Friendly'],
+   desc:'Coed recreational adult leagues across multiple sports — kickball, dodgeball, sand volleyball, and more. Designed to be social and fun first, competitive second. Massive for meeting civilians and building a life outside the base. New seasons start quarterly.',
+   links:[{icon:'🌐',label:'Metro Parks Tacoma Sports',url:'https://www.metroparkstacoma.org/programs-activities/sports/'},{icon:'🌐',label:'South Sound Social Sports',url:'https://www.southsoundsocialsports.com'},{icon:'🌐',label:'Comeback Sports Tacoma',url:'https://www.comebacksports.com'}]},
+
+  {id:11,cat:'sports',emoji:'🏐',name:'DaKine Sports Center — Volleyball',badge:'off',loc:'2818 69th Ave W, Tacoma',dist:'~10 miles',cost:'League & court fees',rating:4.6,
+   tags:['Volleyball','Indoor','Sand Volleyball','Leagues','Clinics','Competitive'],
+   desc:'4.6⭐ from 78 reviews. Indoor and outdoor sand volleyball courts with leagues, clinics, and tournaments. Great facility, great coaching, great community of players. If you\'re into volleyball this is the premier venue in the South Sound.',
+   hours:'Open 24/7 for member access — check league schedule',
+   links:[{icon:'🌐',label:'DaKine Sports Center',url:'https://www.dakinesports.com'},{icon:'📍',label:'Get Directions',url:'https://maps.google.com/?q=2818+69th+Ave+W+Tacoma+WA'}]},
+
+  {id:12,cat:'sports',emoji:'🥏',name:'Paul Bunyan Rifle & Sportsman\'s Club',badge:'off',loc:'17902 Meridian E, South Hill',dist:'~12 miles',cost:'Membership + range fees',rating:4.4,
+   tags:['Shooting Competitions','USPSA','IDPA','Rifle','Pistol','Shotgun','Archery'],
+   desc:'4.4⭐ from 94 reviews. Full competition shooting club with 200-yard rifle range, pistol bays, shotgun ranges, and archery. Hosts USPSA and IDPA action shooting competitions. Members-only but absolutely worth the annual membership fee.',
+   hours:'Daily 7AM–10PM',
+   links:[{icon:'🌐',label:'Paul Bunyan Club Website',url:'https://www.paulbunyanclub.org'},{icon:'📍',label:'Get Directions',url:'https://maps.google.com/?q=Paul+Bunyan+Rifle+Club+South+Hill+WA'}]},
+
+  // FISHING
+  {id:13,cat:'fishing',emoji:'🎣',name:'Outlander Charters — Salmon & Squid',badge:'off',loc:'3557 Harborview Dr, Gig Harbor',dist:'~18 miles',cost:'~$150–$250/person',rating:5.0,
+   tags:['Fishing Charter','Salmon','Squid','Orca Sightings','Gig Harbor','5 Stars'],
+   desc:'Perfect 5.0⭐ from 64 reviews. Captain Jason Nolander runs an exceptional operation out of Gig Harbor. Reviews rave about salmon limits, squid trips, and bonus orca sightings. Top-notch boat and gear. "Once in a lifetime" trips reported repeatedly.',
+   hours:'Open 24/7 for bookings — trips vary by season',
+   links:[{icon:'🌐',label:'Book Outlander Charters',url:'https://www.outlandercharters.com'},{icon:'📍',label:'Get Directions to Gig Harbor Marina',url:'https://maps.google.com/?q=3557+Harborview+Dr+Gig+Harbor+WA'}]},
+
+  {id:14,cat:'fishing',emoji:'🐟',name:'Spot Tail Seattle Fishing Charters',badge:'off',loc:'7411 Seaview Ave NW, Seattle',dist:'~42 miles',cost:'~$200–$300/person',rating:4.9,
+   tags:['Salmon Charter','Puget Sound','Mooching','Orca Sightings','Expert Captain','Seattle'],
+   desc:'4.9⭐ from 179 reviews. Captain Keith is a Seattle native who\'s fished Puget Sound for decades. Salmon mooching specialist — hands-on fishing experience vs boring trolling. Multiple reviews mention orca encounters as a bonus. Worth the drive to Seattle.',
+   hours:'Daily 6AM–8PM for bookings',
+   links:[{icon:'🌐',label:'Book Spot Tail Charters',url:'https://www.spottailcharters.com'},{icon:'📍',label:'Get Directions',url:'https://maps.google.com/?q=7411+Seaview+Ave+NW+Seattle+WA'}]},
+
+  {id:15,cat:'fishing',emoji:'🏞️',name:'DIY Fishing — Local Lakes, Rivers & Sound',badge:'off',loc:'Steilacoom Lake, Nisqually River, Puget Sound',dist:'2–20 miles',cost:'WA Fishing License req.',rating:4.7,
+   tags:['Salmon','Steelhead','Bass','Trout','Crabbing','Pier Fishing','Free Access'],
+   desc:'Some of the best fishing in America is right outside JBLM\'s gate. Steilacoom Lake for bass and trout (minutes away), Nisqually River for steelhead in winter, Puget Sound salmon runs in fall, and Dungeness crabbing from public piers. Get your license at WDFW.wa.gov or Big J\'s in Orting.',
+   links:[{icon:'🌐',label:'WDFW Fishing Licenses & Info',url:'https://wdfw.wa.gov/fishing'},{icon:'📍',label:'Steilacoom Lake Access',url:'https://maps.google.com/?q=Steilacoom+Lake+WA'},{icon:'📍',label:'Nisqually River Access',url:'https://maps.google.com/?q=Nisqually+River+WA+fishing'}]},
+
+  // OUTDOOR / HUNTING
+  {id:16,cat:'outdoor',emoji:'🦌',name:'Hunting — WA Public Land Near JBLM',badge:'off',loc:'Pierce & Thurston County Public Lands',dist:'20–50 miles',cost:'WA Hunting License req.',rating:4.7,
+   tags:['Deer','Elk','Turkey','Waterfowl','GMU 652','GMU 654','Public Land'],
+   desc:'Excellent hunting within 50 miles of JBLM. Deer and elk in Cascades foothills (GMUs 652, 654, 666), turkey in SW Washington, waterfowl at Nisqually Wildlife Refuge. Apply for elk draw permits at WDFW ASAP after arriving — popular units fill fast.',
+   links:[{icon:'🌐',label:'WDFW Hunting — Seasons & Licenses',url:'https://wdfw.wa.gov/hunting'},{icon:'🌐',label:'WA Hunt Planner Tool',url:'https://wdfw.wa.gov/hunting/planner'},{icon:'📍',label:'Big J\'s Outdoor Store — Orting',url:'https://maps.google.com/?q=Big+J%27s+Outdoor+Store+Orting+WA'}]},
+
+  {id:17,cat:'outdoor',emoji:'🚣',name:'Kayaking & Paddleboarding — MWR Rentals',badge:'off',loc:'American Lake / Steilacoom / Gig Harbor',dist:'5–15 miles',cost:'MWR Rates / $15–$40 commercial',rating:4.5,
+   tags:['Kayaking','Paddleboard','MWR Rentals','Puget Sound','Mt Rainier Views','Water Sports'],
+   desc:'JBLM borders American Lake and is minutes from Puget Sound. MWR rents kayaks, canoes, and paddleboards at heavily discounted rates. Commercial options in Gig Harbor and Steilacoom. Paddle on the Sound with Mt. Rainier as your backdrop.',
+   links:[{icon:'🌐',label:'JBLM MWR Outdoor Rec Rentals',url:'https://www.jblmfmwr.com/outdoor-recreation'},{icon:'📍',label:'American Lake Access Point',url:'https://maps.google.com/?q=American+Lake+JBLM+WA'}]},
+
+  // AIRSOFT & PAINTBALL
+  {id:18,cat:'airsoft',emoji:'🔫',name:'Tacoma Airsoft Center',badge:'off',loc:'1517 S Tacoma Way, Tacoma',dist:'~9 miles',cost:'~$20–$35/session',rating:4.6,
+   tags:['Airsoft','Indoor Field','Game Variety','Rentals Available','All Skill Levels','Shop On-Site'],
+   desc:'4.6⭐ from 600 reviews — the premier indoor airsoft arena near JBLM. Multiple game types, rotating layouts, and a huge on-site shop for gear. Staff are highly rated for being supportive and knowledgeable. Rentals available so no gear needed to start.',
+   hours:'Fri: 3–11PM | Sat–Sun: 10AM–7PM | Mon–Thu: Closed',
+   links:[{icon:'🌐',label:'Tacoma Airsoft Center Website',url:'https://tacomaairosoft.com'},{icon:'📍',label:'Get Directions',url:'https://maps.google.com/?q=1517+S+Tacoma+Way+Tacoma+WA+airsoft'}]},
+
+  {id:19,cat:'airsoft',emoji:'🎨',name:'Paintball — JBLM Field + Local Options',badge:'off',loc:'JBLM / Pierce County',dist:'On Base + ~15 miles',cost:'~$20–$40/session',rating:4.5,
+   tags:['Paintball','JBLM Field','Outdoor','Rentals','Group Events','Adrenaline'],
+   desc:'Multiple paintball options near JBLM. The on-base MWR paintball field is the best value. For off-base options search Pierce County paintball parks. Great for unit bonding, birthday groups, or just a weekend adrenaline fix. Rentals available at most locations.',
+   links:[{icon:'🌐',label:'JBLM MWR Outdoor Recreation',url:'https://www.jblmfmwr.com/outdoor-recreation'},{icon:'🔍',label:'Paintball Locations Near JBLM',url:'https://www.google.com/maps/search/paintball+near+Tacoma+WA'}]},
+
+  // DISC GOLF & FRISBEE
+  {id:20,cat:'frisbee',emoji:'🥏',name:'Flexline Discs & Rhododendron Course',badge:'off',loc:'8202 87th Ave SW, Lakewood',dist:'~5 miles',cost:'$5 day pass',rating:4.9,
+   tags:['Disc Golf','Local Shop','Expert Staff','Day Pass','Lakewood','Great Value'],
+   desc:'4.9⭐ from 92 reviews and just 5 miles from JBLM. Flexline is a world-class disc golf shop with an attached course (Rhododendron) for $5. Staff are passionate about the sport and give honest, knowledgeable advice. "Best disc golf store in WA" according to multiple reviewers.',
+   hours:'Mon–Fri: 8AM–6PM | Sat–Sun: 8AM–4PM',
+   links:[{icon:'🌐',label:'Flexline Discs Website',url:'https://www.flexlinediscs.com'},{icon:'📍',label:'Get Directions',url:'https://maps.google.com/?q=8202+87th+Ave+SW+Lakewood+WA'}]},
+
+  {id:21,cat:'frisbee',emoji:'🌊',name:'Riverside Disc Golf Course',badge:'off',loc:'7926 Riverside Rd E, Sumner',dist:'~22 miles',cost:'Free',rating:4.4,
+   tags:['Disc Golf','18 Holes','River Views','Technical Course','Wooded','Challenging'],
+   desc:'4.4⭐ from 227 reviews. Beautiful 18-hole wooded course along the Puyallup River. Technical shots with tight fairways through trees. River and wildlife views throughout. Free to play, challenging for intermediate to advanced players.',
+   hours:'Daily 7AM–9PM',
+   links:[{icon:'📍',label:'Get Directions',url:'https://maps.google.com/?q=7926+Riverside+Rd+E+Sumner+WA+disc+golf'},{icon:'🌐',label:'PDGA Course Directory',url:'https://www.pdga.com/course-directory/advanced#filters=eyJsb2NhdGlvbiI6IlRhY29tYSwgV0EifQ=='}]},
+
+  {id:22,cat:'frisbee',emoji:'🏫',name:'PLU Meadows Disc Golf Course',badge:'off',loc:'754 124th St S, Parkland',dist:'~5 miles',cost:'Free',rating:4.4,
+   tags:['Disc Golf','Beginner Friendly','9 Holes','Flat','Open','Learning'],
+   desc:'4.4⭐ from 131 reviews. Right next to JBLM in Parkland. Open, flat course — perfect for beginners learning the sport or warming up new discs. Quick 9-hole rounds. If you\'re new to disc golf, start here before moving to Riverside or other technical courses.',
+   hours:'Daily 7AM–8PM',
+   links:[{icon:'📍',label:'Get Directions',url:'https://maps.google.com/?q=PLU+Meadows+Disc+Golf+Parkland+WA'}]},
+
+  {id:23,cat:'frisbee',emoji:'🏃',name:'Ultimate Frisbee — Tacoma League',badge:'off',loc:'Various fields, Tacoma',dist:'5–15 miles',cost:'League fees / Free pickup',rating:4.5,
+   tags:['Ultimate Frisbee','Pickup Games','Adult Leagues','Coed','USAU','Competitive & Casual'],
+   desc:'USA Ultimate (USAU) organizes leagues and tournaments throughout the Puget Sound region. Tacoma has active pickup ultimate games and organized league seasons. Great high-intensity sport perfect for athletes. Check USAU.org and local Facebook groups for pickup games.',
+   links:[{icon:'🌐',label:'USA Ultimate Washington',url:'https://www.usaultimate.org'},{icon:'🔍',label:'Tacoma Ultimate Frisbee Groups',url:'https://www.facebook.com/groups/search/?q=ultimate+frisbee+tacoma+washington'}]},
+
+  // GAMING
+  {id:24,cat:'gaming',emoji:'🐉',name:'TerraCrux Games — D&D & Tabletop HQ',badge:'off',loc:'760 Commerce St, Tacoma',dist:'~12 miles',cost:'Free to play / Retail',rating:4.7,
+   tags:['D&D','Dungeons & Dragons','Magic the Gathering','Warhammer','Organized Play','Welcoming'],
+   desc:'4.7⭐ from 645 reviews — called "D&D Valhalla" by reviewers. Enormous selection of sourcebooks, miniatures, paints, and singles. Regular D&D Adventurers League organized play nights (just show up — no group needed). The most welcoming game store in the region.',
+   hours:'Mon–Wed: 12–8PM | Thu–Fri: 12–10PM | Sat: 12–8PM | Sun: 12–7PM',
+   links:[{icon:'🌐',label:'TerraCrux Games Website',url:'https://www.terracruxgames.com'},{icon:'📍',label:'Get Directions',url:'https://maps.google.com/?q=760+Commerce+St+Tacoma+WA'}]},
+
+  {id:25,cat:'gaming',emoji:'🎲',name:'Silver King Games & Hobby',badge:'off',loc:'5442 S Tacoma Way, Tacoma',dist:'~8 miles',cost:'Free to browse/play / Retail',rating:4.8,
+   tags:['Warhammer','Miniatures','Painting','D&D','Community Hub','Friendly Owner'],
+   desc:'4.8⭐ from 83 reviews. Tacoma\'s hidden treasure — owner John creates a genuinely warm community hub atmosphere. Great for mini painting, Warhammer, and D&D supplies. People drop by just to hang out and chat. Excellent prices and try-before-you-buy options.',
+   hours:'Mon: 11AM–7PM | Tue–Thu: 4–7PM | Fri–Sat: 11AM–9PM | Sun: 11AM–7PM',
+   links:[{icon:'📍',label:'Get Directions',url:'https://maps.google.com/?q=5442+S+Tacoma+Way+Tacoma+WA'}]},
+
+  // NATURE
+  {id:26,cat:'nature',emoji:'⛰️',name:'Mt. Rainier National Park',badge:'off',loc:'Paradise Visitor Center',dist:'~55 miles',cost:'FREE with Military ID',rating:4.9,
+   tags:['Hiking','Backpacking','Snowshoeing','Summit 14411ft','Wildflowers','Iconic'],
+   desc:'One of the most iconic mountains in North America, essentially in JBLM\'s backyard. Free with military ID. Hundreds of trails from easy strolls to summit attempts. Paradise for spring wildflowers and winter snowshoeing. Non-negotiable on your Pacific Northwest bucket list.',
+   hours:'Open year-round — some roads close seasonally',
+   links:[{icon:'🌐',label:'NPS Mt. Rainier Info',url:'https://www.nps.gov/mora'},{icon:'📍',label:'Paradise Visitor Center',url:'https://maps.google.com/?q=Paradise+Visitor+Center+Mt+Rainier+WA'},{icon:'🌐',label:'Free Military NPS Pass Info',url:'https://www.nps.gov/planyourvisit/military.htm'}]},
+
+  {id:27,cat:'nature',emoji:'🎿',name:'Crystal Mountain Ski Resort',badge:'off',loc:'Crystal Mountain Blvd, Enumclaw',dist:'~50 miles',cost:'~$100–$150/day',rating:4.7,
+   tags:['Skiing','Snowboarding','Terrain Parks','Mt Rainier Views','Winter','1hr from JBLM'],
+   desc:'Washington\'s largest ski resort with Mt. Rainier views from the top. Beginner through expert terrain. Amazing snowpack most winters. About an hour from JBLM — a must-do every winter you\'re stationed here.',
+   hours:'November – April season',
+   links:[{icon:'🌐',label:'Crystal Mountain Website',url:'https://www.crystalmountainresort.com'},{icon:'📍',label:'Get Directions',url:'https://maps.google.com/?q=Crystal+Mountain+Resort+WA'}]},
+
+  // SOCIAL
+  {id:28,cat:'social',emoji:'⚾',name:'Tacoma Rainiers Baseball (AAA)',badge:'off',loc:'Cheney Stadium, Tacoma',dist:'~8 miles',cost:'$12–$30',rating:4.7,
+   tags:['Baseball','AAA','Mariners Affiliate','Cheap Tickets','Summer Nights','Great Atmosphere'],
+   desc:'AAA affiliate of the Seattle Mariners. Watch future MLB stars before they make it big. Cheney Stadium is intimate and affordable — $12 tickets, cold beer, great summer evenings. One of the best cheap nights out near JBLM.',
+   hours:'April – September season',
+   links:[{icon:'🌐',label:'Buy Tacoma Rainiers Tickets',url:'https://www.milb.com/tacoma/tickets'},{icon:'📍',label:'Cheney Stadium Directions',url:'https://maps.google.com/?q=Cheney+Stadium+Tacoma+WA'}]},
+
+  {id:29,cat:'social',emoji:'🍺',name:'Tacoma Craft Brewery Scene',badge:'off',loc:'Stadium District & 6th Ave, Tacoma',dist:'~10 miles',cost:'Varies',rating:4.5,
+   tags:['Craft Beer','Breweries','Bars','6th Ave','Stadium District','Social','Nightlife'],
+   desc:'Tacoma has a booming craft brewery and bar scene. Top spots: Wingman Brewers, Dovetail Brewery, Tacoma Brewing Co, and dozens more along 6th Avenue and the Stadium District. Great for meeting people outside the base bubble.',
+   links:[{icon:'🔍',label:'Tacoma Breweries Map',url:'https://www.google.com/maps/search/craft+brewery+Tacoma+WA'},{icon:'📍',label:'6th Avenue Tacoma',url:'https://maps.google.com/?q=6th+Ave+Tacoma+WA'}]},
+];
+
+// FEATURED QUICK PICKS
+const FEATURED = [
+  {id:6,label:'MMA Gym',sub:'T-Town Checkmat'},
+  {id:13,label:'Fishing Charter',sub:'Outlander Gig Harbor'},
+  {id:18,label:'Airsoft',sub:'Tacoma Airsoft Center'},
+  {id:24,label:'D&D',sub:'TerraCrux Games'},
+  {id:20,label:'Disc Golf',sub:'Flexline + Course'},
+  {id:26,label:'Mt. Rainier',sub:'Free w/ Military ID'},
+  {id:9,label:'Lacrosse',sub:'253 Lacrosse'},
+  {id:3,label:'Paintball',sub:'JBLM MWR Field'},
+];
+
+// RESOURCES
+const RESOURCES = [
+  {e:'🌐',n:'JBLM MWR Portal',s:'Events, rentals & leagues',u:'https://www.jblmfmwr.com'},
+  {e:'🎖️',n:'JBLM Homepage',s:'Base directory & info',u:'https://home.army.mil/lewis-mcchord'},
+  {e:'🦌',n:'WDFW Hunting',s:'Seasons & licenses',u:'https://wdfw.wa.gov/hunting'},
+  {e:'🎣',n:'WDFW Fishing',s:'Reports & regulations',u:'https://wdfw.wa.gov/fishing'},
+  {e:'🏔️',n:'WA State Parks',s:'Camping & discover pass',u:'https://parks.wa.gov'},
+  {e:'🏖️',n:'NPS Military Pass',s:'Free access with mil. ID',u:'https://www.nps.gov/planyourvisit/military.htm'},
+  {e:'🎵',n:'Tacoma Concerts',s:'Songkick event finder',u:'https://www.songkick.com/metro-areas/24490-us-tacoma'},
+  {e:'⚔️',n:'D&D Beyond',s:'Character tools & rules',u:'https://www.dndbeyond.com'},
+  {e:'🧭',n:'AllTrails — JBLM',s:'Nearby hikes & maps',u:'https://www.alltrails.com/us/washington/tacoma'},
+  {e:'🥏',n:'PDGA Disc Golf',s:'Course finder near JBLM',u:'https://www.pdga.com/course-directory'},
+];
+
+// TIPS
+const TIPS = [
+  {n:'01',t:'National Parks Are FREE With Your Military ID',b:'Every active duty soldier gets free access to all US National Parks. Mt. Rainier and Olympic NP are both within 90 minutes. This is one of the best perks of being stationed in the Pacific Northwest — use it constantly.'},
+  {n:'02',t:'Use MWR Before Paying Full Price Anywhere',b:'JBLM MWR is massively underutilized. Free/discounted gym, two golf courses ($15–$35), bowling, kayak rentals, camping gear, paintball, and event tickets. Check jblmfmwr.com before paying anywhere else.'},
+  {n:'03',t:'Lacrosse — Contact 253 Lacrosse Week 1',b:'Don\'t wait for a season. 253 Lacrosse is the local club — reach out the week you arrive. The PNW lacrosse scene is active and growing. For competitive play, the PNLL has Seattle-area clubs worth the drive.'},
+  {n:'04',t:'Elk Draw Permits Fill Fast — Apply Immediately',b:'Apply for WA elk draw permits at WDFW.wa.gov as soon as you get here. Popular GMUs (652, 654) are oversubscribed every year. The earlier you apply, the better your odds.'},
+  {n:'05',t:'Show Up at TerraCrux Thursday Night for D&D',b:'D&D Adventurers League runs at TerraCrux on Thursday evenings. Just show up with a character sheet — no group needed, no advance registration. The fastest way to plug into the local D&D scene.'},
+  {n:'06',t:'Disc Golf Is Huge Here — $5 Gets You All Day',b:'The Pacific Northwest has one of the strongest disc golf scenes in the US. Flexline in Lakewood is 5 miles from JBLM with a $5 all-day course pass and expert staff. Great free/cheap outdoor activity year-round.'},
+  {n:'07',t:'Seattle Is 45 Minutes Away — Use It',b:'World-class concerts at Climate Pledge Arena, Seahawks games, Pike Place Market, world-class restaurants, and one of the best nightlife scenes in the US. Don\'t limit yourself to Tacoma alone.'},
+  {n:'08',t:'JBLM Combatives = Free BJJ + Career Boost',b:'Train Army Combatives (MACP) on base for free. Earn Level 1–4 certifications. Looks great on your record. Then supplement with T-Town, Vital, or Wave Combat for civilian-level technique.'},
+  {n:'09',t:'Rain Gear Is Non-Negotiable',b:'Western WA rains October through May. The right gear (waterproof jacket, boots) makes everything available year-round. Big J\'s in Orting is the best local outdoor shop. Don\'t let rain be an excuse.'},
+  {n:'10',t:'Puget Sound Fishing Is World-Class',b:'Chinook salmon runs in the fall, Dungeness crabbing from public piers, steelhead in the Nisqually River all winter. Get your WA fishing license at WDFW.wa.gov or Big J\'s. This is genuinely some of the best fishing in the country.'},
+];
+
+// ════════════════════════
+// STATE
+// ════════════════════════
+let allEvents=[], evSeg='all', acCat='all', acSearch='';
+
+// ════════════════════════
+// EVENTS — TICKETMASTER LIVE
+// ════════════════════════
+async function loadEvents(){
+  const cont=document.getElementById('evContainer');
+  const cnt=document.getElementById('evCount');
+  const icon=document.getElementById('refIcon');
+  cont.innerHTML=buildSkels(5); cnt.textContent='Loading...'; icon.classList.add('spin');
+  try{
+    const today=new Date().toISOString().split('T')[0]+'T00:00:00Z';
+    const end=new Date(Date.now()+90*864e5).toISOString().split('T')[0]+'T00:00:00Z';
+    const r=await fetch(`${TM}?apikey=${API_KEY}&latlong=${LAT},${LNG}&radius=${RADIUS}&unit=miles&size=60&sort=date,asc&startDateTime=${today}&endDateTime=${end}`);
+    const d=await r.json();
+    if(d.fault||r.status===401)throw new Error('auth');
+    allEvents=(d._embedded?.events||[]).map(parseEv);
+    renderEvents();
+    document.getElementById('liveStatus').textContent='Updated '+new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+    document.getElementById('evTotal').textContent=allEvents.length;
+  }catch(e){
+    cont.innerHTML=`<div class="empty"><div class="empty-e">📡</div><div class="empty-t">Couldn't load events</div><div class="empty-s">Check your connection and tap Refresh</div></div>`;
+    cnt.textContent='—';
+  }finally{icon.classList.remove('spin')}
+}
+
+function parseEv(e){
+  const v=e._embedded?.venues?.[0];
+  const seg=e.classifications?.[0]?.segment?.name?.toLowerCase()||'other';
+  const pr=e.priceRanges?.[0];
+  const dt=e.dates?.start;
+  const dateStr=dt?.localDate||'';
+  let d=null; if(dateStr) d=new Date(dateStr+'T12:00:00');
+  return{
+    id:e.id,name:e.name,url:e.url||'',
+    venue:v?.name||'TBD',city:v?.city?.name||'Near JBLM',
+    date:d,dateStr,timeStr:dt?.localTime||'',
+    seg:mapSeg(seg),
+    priceMin:pr?.min,priceMax:pr?.max,
+  };
+}
+
+function mapSeg(s){
+  if(s.includes('music'))return'music';
+  if(s.includes('sport'))return'sports';
+  if(s.includes('art')||s.includes('theatre'))return'arts';
+  if(s.includes('family'))return'family';
+  return'misc';
+}
+
+function renderEvents(){
+  const cont=document.getElementById('evContainer');
+  const cnt=document.getElementById('evCount');
+  let filtered=allEvents.filter(e=>evSeg==='all'||e.seg===evSeg);
+  cnt.textContent=filtered.length+' found';
+  if(!filtered.length){cont.innerHTML=`<div class="empty"><div class="empty-e">🎟️</div><div class="empty-t">No events in this category</div><div class="empty-s">Try "All" or check back soon</div></div>`;return;}
+  const segL={music:'🎵 Concert',sports:'🏅 Sport',arts:'🎭 Show',family:'👪 Family',misc:'🎪 Event'};
+  cont.innerHTML=`<div class="ev-list">`+filtered.map((e,i)=>{
+    const mon=e.date?e.date.toLocaleString('en-US',{month:'short'}).toUpperCase():'---';
+    const day=e.date?e.date.getDate():'--';
+    const dow=e.date?e.date.toLocaleString('en-US',{weekday:'short'}).toUpperCase():'';
+    const price=e.priceMin?`From $${Math.round(e.priceMin)}`:'See Prices';
+    return `<div class="ev-card" onclick="openEvModal(${i})" style="animation-delay:${i*0.04}s">
+      <div class="ev-inner">
+        <div class="ev-date"><div class="ev-mon">${mon}</div><div class="ev-day">${day}</div><div class="ev-dow">${dow}</div></div>
+        <div class="ev-main">
+          <div class="ev-name">${e.name}</div>
+          <div class="ev-meta">
+            <span class="ev-venue">📍 ${e.venue}</span>
+            <span class="ecat ecat-${e.seg}">${segL[e.seg]||'Event'}</span>
+            <span class="ev-price">${price}</span>
+          </div>
+        </div>
+        <div class="ev-arr">›</div>
+      </div>
+    </div>`;
+  }).join('')+'</div>';
+}
+
+function openEvModal(i){
+  const filtered=allEvents.filter(e=>evSeg==='all'||e.seg===evSeg);
+  const e=filtered[i]; if(!e)return;
+  const segI={music:'🎵',sports:'🏅',arts:'🎭',family:'👪',misc:'🎪'};
+  const segL={music:'Concert',sports:'Sports Event',arts:'Arts & Theatre',family:'Family Event',misc:'Event'};
+  const dateStr=e.date?e.date.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}):'Date TBD';
+  const timeStr=e.timeStr?formatTime(e.timeStr):'Time TBD';
+  const price=e.priceMin?`$${Math.round(e.priceMin)}${e.priceMax&&e.priceMax!==e.priceMin?'–$'+Math.round(e.priceMax):'+'}`:'Check website';
+
+  document.getElementById('mIcon').textContent=segI[e.seg]||'🎟️';
+  document.getElementById('mName').textContent=e.name;
+  document.getElementById('mSub').textContent=(segL[e.seg]||'Event')+' • '+e.city;
+  document.getElementById('mStrip').className='modal-strip strip-music';
+
+  document.getElementById('mBody').innerHTML=`
+    <div class="ml">Event Details</div>
+    <div class="mg">
+      <div class="mp"><div class="l">Date</div><div class="v">${dateStr}</div></div>
+      <div class="mp"><div class="l">Time</div><div class="v">${timeStr}</div></div>
+      <div class="mp"><div class="l">Venue</div><div class="v">${e.venue}</div></div>
+      <div class="mp"><div class="l">Price</div><div class="v vg">${price}</div></div>
+    </div>
+    <div class="ml">Actions</div>
+    <div class="mlinks">
+      ${e.url?`<button class="mlink-btn" onclick="openLink('${e.url}')"><div class="mlink-left"><span class="mlink-icon">🎟️</span><span>Get Tickets on Ticketmaster</span></div><span class="mlink-arr">↗</span></button>`:''}
+      <button class="mlink-btn" onclick="openLink('https://maps.google.com/?q=${encodeURIComponent(e.venue+' '+e.city+' WA')}')"><div class="mlink-left"><span class="mlink-icon">📍</span><span>Get Directions to Venue</span></div><span class="mlink-arr">↗</span></button>
+    </div>
+  `;
+  openModal();
+}
+
+function formatTime(t){const[h,m]=t.split(':').map(Number);return`${h%12||12}:${String(m).padStart(2,'0')} ${h>=12?'PM':'AM'}`}
+
+document.getElementById('evFilters').addEventListener('click',e=>{
+  const b=e.target.closest('.fb'); if(!b)return;
+  document.querySelectorAll('#evFilters .fb').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active'); evSeg=b.dataset.seg; renderEvents();
+});
+
+// ════════════════════════
+// EXPLORE
+// ════════════════════════
+function renderFeatured(){
+  document.getElementById('featRow').innerHTML=FEATURED.map((f,i)=>{
+    const a=ACTS.find(x=>x.id===f.id); if(!a)return'';
+    return`<div class="feat-chip" onclick="openAcModal(${a.id})" style="animation-delay:${i*0.05}s">
+      <span class="feat-e">${a.emoji}</span>
+      <div class="feat-n">${f.label}</div>
+      <div class="feat-s">${f.sub}</div>
+    </div>`;
+  }).join('');
+}
+
+function filterExplore(){
+  let filtered=ACTS.filter(a=>{
+    const mc=acCat==='all'||a.cat===acCat;
+    const q=acSearch.toLowerCase();
+    const ms=!q||a.name.toLowerCase().includes(q)||a.desc.toLowerCase().includes(q)||a.tags.some(t=>t.toLowerCase().includes(q));
+    return mc&&ms;
+  });
+  document.getElementById('acCount').textContent=filtered.length+'';
+  document.getElementById('acTotal').textContent=ACTS.length+'+';
+  const cont=document.getElementById('acContainer');
+  if(!filtered.length){cont.innerHTML=`<div class="empty"><div class="empty-e">🔍</div><div class="empty-t">No results</div><div class="empty-s">Try a different search or category</div></div>`;return;}
+  cont.innerHTML=filtered.map((a,i)=>`
+    <div class="ac" data-cat="${a.cat}" onclick="openAcModal(${a.id})" style="animation-delay:${i*0.04}s">
+      <div class="ac-top">
+        <div class="ac-left">${a.emoji}</div>
+        <div class="ac-body">
+          <div class="ac-name">${a.name}</div>
+          <div class="ac-row">
+            <span class="ac-dist">📍 ${a.loc.split(',')[0]}</span>
+            ${a.rating?`<span class="ac-rat">⭐ ${a.rating}</span>`:''}
+            <span class="${a.badge==='on'?'badge-on':'badge-off'}">${a.badge==='on'?'ON BASE':a.dist}</span>
+          </div>
+          <div class="ac-desc">${a.desc}</div>
+          <div class="ac-tags">${a.tags.slice(0,4).map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+        </div>
+        <div class="ac-arr">›</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+document.getElementById('acFilters').addEventListener('click',e=>{
+  const b=e.target.closest('.fb'); if(!b)return;
+  document.querySelectorAll('#acFilters .fb').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active'); acCat=b.dataset.cat; filterExplore();
+});
+document.getElementById('searchInput').addEventListener('input',e=>{acSearch=e.target.value;filterExplore();});
+
+function openAcModal(id){
+  const a=ACTS.find(x=>x.id===id); if(!a)return;
+  const catMap={onbase:'🎖️ On Base',mma:'🥊 MMA & Martial Arts',sports:'🏅 Sports League',fishing:'🎣 Fishing',outdoor:'🌲 Outdoor',airsoft:'🔫 Paintball/Airsoft',frisbee:'🥏 Disc & Frisbee',gaming:'🎲 D&D & Gaming',nature:'⛰️ Hiking & Nature',social:'🍺 Social & Entertainment'};
+  document.getElementById('mIcon').textContent=a.emoji;
+  document.getElementById('mName').textContent=a.name;
+  document.getElementById('mSub').textContent=(catMap[a.cat]||a.cat)+' • '+(a.badge==='on'?'On Base':a.dist+' from JBLM');
+  document.getElementById('mStrip').className=`modal-strip strip-${a.cat}`;
+  document.getElementById('mBody').innerHTML=`
+    <div class="ml">About</div>
+    <div class="mt">${a.desc}</div>
+    <div class="mg" style="margin-top:12px">
+      <div class="mp"><div class="l">Cost</div><div class="v vg">${a.cost||'Varies'}</div></div>
+      <div class="mp"><div class="l">Distance</div><div class="v">${a.dist}</div></div>
+      ${a.rating?`<div class="mp"><div class="l">Rating</div><div class="v va">⭐ ${a.rating}</div></div>`:''}
+      ${a.hours?`<div class="mp"><div class="l">Hours</div><div class="v" style="font-size:11px">${a.hours}</div></div>`:''}
+    </div>
+    <div class="ml">Tags</div>
+    <div class="mtags">${a.tags.map(t=>`<div class="mtag">${t}</div>`).join('')}</div>
+    ${a.links?.length?`<div class="ml">Links & Directions</div><div class="mlinks">${a.links.map(l=>`<button class="mlink-btn" onclick="openLink('${l.url}')"><div class="mlink-left"><span class="mlink-icon">${l.icon||'🔗'}</span><span>${l.label}</span></div><span class="mlink-arr">↗</span></button>`).join('')}</div>`:''}
+  `;
+  openModal();
+}
+
+// ════════════════════════
+// RESOURCES & TIPS
+// ════════════════════════
+function renderResources(){
+  document.getElementById('resGrid').innerHTML=RESOURCES.map(r=>`
+    <a class="rc" href="${r.u}" target="_blank" rel="noopener">
+      <span class="rc-e">${r.e}</span>
+      <div class="rc-n">${r.n}</div>
+      <div class="rc-s">${r.s}</div>
+    </a>
+  `).join('');
+  document.getElementById('tipsContainer').innerHTML=TIPS.map(t=>`
+    <div class="tip-card">
+      <div class="tip-n">${t.n}</div>
+      <div class="tip-t">${t.t}</div>
+      <div class="tip-b">${t.b}</div>
+    </div>
+  `).join('');
+}
+
+// ════════════════════════
+// MODAL
+// ════════════════════════
+function openModal(){document.getElementById('modalOv').classList.add('open');document.body.style.overflow='hidden';}
+function closeModal(){document.getElementById('modalOv').classList.remove('open');document.body.style.overflow='';}
+document.getElementById('modalOv').addEventListener('click',e=>{if(e.target===document.getElementById('modalOv'))closeModal();});
+
+let _sy=0;
+document.getElementById('modalBox').addEventListener('touchstart',e=>{_sy=e.touches[0].clientY;},{passive:true});
+document.getElementById('modalBox').addEventListener('touchend',e=>{if(e.changedTouches[0].clientY-_sy>90)closeModal();},{passive:true});
+
+// KEY FIX: openLink properly opens all URLs in new tab
+function openLink(url){
+  if(!url)return;
+  window.open(url,'_blank','noopener,noreferrer');
+}
+
+// ════════════════════════
+// NAV
+// ════════════════════════
+function switchView(name,btn){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ════════════════════════
+// HELPERS
+// ════════════════════════
+function buildSkels(n){return`<div class="skels">${Array(n).fill(`<div class="skel" style="height:80px"></div>`).join('')}</div>`;}
+function refreshAll(){loadEvents();showToast('🔄 Refreshing live data...');}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+
+// AUTO REFRESH every 30 min
+setInterval(loadEvents, 30*60*1000);
+
+// ════════════════════════
+// INIT
+// ════════════════════════
+renderFeatured();
+filterExplore();
+renderResources();
+loadEvents();
+</script>
+</body>
+</html>
